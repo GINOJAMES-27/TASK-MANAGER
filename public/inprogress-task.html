@@ -1,0 +1,548 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>In Progress Tasks</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+        }
+        
+        .navbar-glass {
+            backdrop-filter: blur(20px);
+            background: rgba(255, 255, 255, 0.15);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .main-card {
+            backdrop-filter: blur(20px);
+            background: rgba(255, 255, 255, 0.95);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.15);
+            transition: all 0.4s ease;
+        }
+        
+        .task-card {
+            backdrop-filter: blur(10px);
+            background: rgba(255, 255, 255, 0.9);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .task-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+            transition: left 0.6s ease;
+        }
+        
+        .task-card:hover::before {
+            left: 100%;
+        }
+        
+        .task-card:hover {
+            background: rgba(255, 255, 255, 0.95);
+            transform: translateY(-5px);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+        }
+        
+        .progress-button {
+            background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .progress-button::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+            transition: left 0.5s ease;
+        }
+        
+        .progress-button:hover::before {
+            left: 100%;
+        }
+        
+        .progress-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(245, 158, 11, 0.4);
+        }
+        
+        .back-button {
+            background: linear-gradient(135deg, #6b7280 0%, #4b5563 100%);
+            transition: all 0.3s ease;
+        }
+        
+        .back-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(107, 114, 128, 0.4);
+        }
+        
+        .main-title {
+            color: white;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+            font-weight: 700;
+        }
+        
+        .section-title {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        .icon-glow {
+            filter: drop-shadow(0 0 8px rgba(255, 255, 255, 0.5));
+        }
+        
+        .floating-animation {
+            animation: float 6s ease-in-out infinite;
+        }
+        
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-5px); }
+        }
+        
+        .fade-in {
+            animation: fadeIn 0.8s ease-in forwards;
+            opacity: 0;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .slide-in {
+            animation: slideIn 0.6s ease-out forwards;
+            opacity: 0;
+            transform: translateX(-30px);
+        }
+        
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateX(-30px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+        
+        /* Animated background elements */
+        .bg-shapes {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            z-index: -1;
+        }
+        
+        .shape {
+            position: absolute;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 50%;
+            animation: drift 30s infinite linear;
+        }
+        
+        .shape:nth-child(1) {
+            width: 80px;
+            height: 80px;
+            top: 10%;
+            left: 10%;
+            animation-delay: 0s;
+        }
+        
+        .shape:nth-child(2) {
+            width: 120px;
+            height: 120px;
+            top: 70%;
+            right: 15%;
+            animation-delay: -10s;
+        }
+        
+        .shape:nth-child(3) {
+            width: 100px;
+            height: 100px;
+            top: 40%;
+            left: 85%;
+            animation-delay: -20s;
+        }
+        
+        @keyframes drift {
+            0% { transform: translateY(0px) rotate(0deg); }
+            100% { transform: translateY(-100vh) rotate(360deg); }
+        }
+        
+        .success-message {
+            background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+            color: white;
+            border-radius: 12px;
+            padding: 12px 20px;
+            box-shadow: 0 10px 25px rgba(245, 158, 11, 0.3);
+        }
+        
+        .error-message {
+            background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+            color: white;
+            border-radius: 12px;
+            padding: 12px 20px;
+            box-shadow: 0 10px 25px rgba(239, 68, 68, 0.3);
+        }
+        
+        .loading-message {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 12px;
+            padding: 12px 20px;
+            box-shadow: 0 10px 25px rgba(102, 126, 234, 0.3);
+        }
+        
+        .priority-badge {
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .priority-low {
+            background: linear-gradient(135deg, rgba(34, 197, 94, 0.8) 0%, rgba(21, 128, 61, 0.8) 100%);
+            color: white;
+        }
+        
+        .priority-medium {
+            background: linear-gradient(135deg, rgba(245, 158, 11, 0.8) 0%, rgba(217, 119, 6, 0.8) 100%);
+            color: white;
+        }
+        
+        .priority-high {
+            background: linear-gradient(135deg, rgba(239, 68, 68, 0.8) 0%, rgba(220, 38, 38, 0.8) 100%);
+            color: white;
+        }
+        
+        .status-pending {
+            background: linear-gradient(135deg, rgba(107, 114, 128, 0.8) 0%, rgba(75, 85, 99, 0.8) 100%);
+            color: white;
+        }
+        
+        .collab-badge {
+            background: linear-gradient(135deg, rgba(20, 184, 166, 0.8) 0%, rgba(13, 148, 136, 0.8) 100%);
+            color: white;
+        }
+        
+        .due-badge {
+            background: linear-gradient(135deg, rgba(139, 92, 246, 0.8) 0%, rgba(124, 58, 237, 0.8) 100%);
+            color: white;
+        }
+        
+        .task-title {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            font-weight: 700;
+        }
+        
+        .pulse-animation {
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+
+        .modal-glass {
+            backdrop-filter: blur(20px);
+            background: rgba(255, 255, 255, 0.95);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.25);
+        }
+
+        .progress-icon {
+            background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+            animation: progressBounce 0.6s ease-in-out;
+        }
+
+        @keyframes progressBounce {
+            0% { transform: scale(0); }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1); }
+        }
+
+        .modal-button {
+            background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+            transition: all 0.3s ease;
+        }
+
+        .modal-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(245, 158, 11, 0.4);
+        }
+
+        .empty-state {
+            background: linear-gradient(135deg, rgba(107, 114, 128, 0.1) 0%, rgba(75, 85, 99, 0.1) 100%);
+            border: 2px dashed rgba(107, 114, 128, 0.3);
+        }
+
+        .lightning-animation {
+            animation: lightning 3s ease-in-out;
+        }
+
+        @keyframes lightning {
+            0% { transform: scale(0) rotate(0deg); opacity: 0; }
+            20% { transform: scale(1) rotate(180deg); opacity: 1; }
+            80% { transform: scale(1) rotate(270deg); opacity: 1; }
+            100% { transform: scale(0) rotate(360deg); opacity: 0; }
+        }
+
+        .waiting-icon {
+            animation: waitingPulse 2s infinite;
+        }
+
+        @keyframes waitingPulse {
+            0%, 100% { transform: scale(1); opacity: 0.7; }
+            50% { transform: scale(1.1); opacity: 1; }
+        }
+    </style>
+</head>
+<body>
+    <!-- Animated background shapes -->
+    <div class="bg-shapes">
+        <div class="shape"></div>
+        <div class="shape"></div>
+        <div class="shape"></div>
+    </div>
+
+    <nav class="navbar-glass p-4 text-white shadow-xl">
+        <div class="container mx-auto flex justify-between items-center">
+            <h1 class="text-2xl font-bold main-title flex items-center">
+                <i class="fas fa-rocket icon-glow mr-3"></i>
+                In Progress Tasks
+            </h1>
+            <a href="dashboard.html" class="back-button px-6 py-2 rounded-xl flex items-center font-medium text-white">
+                <i class="fas fa-arrow-left mr-2"></i>Back to Dashboard
+            </a>
+        </div>
+    </nav>
+
+    <div class="container mx-auto p-6 max-w-5xl">
+        <!-- Header Card -->
+        <div class="main-card rounded-3xl p-8 fade-in mb-6">
+            <h2 class="text-4xl font-bold mb-2 text-center section-title floating-animation">Start Your Tasks</h2>
+            <p class="text-gray-600 text-center mb-8">Move your pending tasks to in progress and begin your productive journey</p>
+            
+            <div id="task-msg" class="text-center mb-6"></div>
+        </div>
+
+        <!-- Tasks Container -->
+        <div class="main-card rounded-3xl p-8 fade-in">
+            <div id="task-list" class="space-y-6">
+                <div class="text-center py-12">
+                    <div class="loading-message inline-block pulse-animation">
+                        <i class="fas fa-spinner fa-spin mr-2"></i>Loading pending tasks...
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Success Modal -->
+    <div id="success-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden backdrop-blur-sm">
+        <div class="modal-glass rounded-3xl p-8 max-w-md mx-4 text-center">
+            <div class="progress-icon w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
+                <i class="fas fa-rocket text-white text-2xl"></i>
+            </div>
+            <h3 class="text-2xl font-bold text-gray-800 mb-2" id="success-title">Task In Progress!</h3>
+            <p class="text-gray-600 mb-6" id="success-message"></p>
+            <button type="button" onclick="closeSuccessModal()" 
+                    class="modal-button text-white px-6 py-3 rounded-xl font-medium flex items-center justify-center mx-auto">
+                <i class="fas fa-bolt mr-2"></i>Let's Go!
+            </button>
+            
+            <!-- Lightning elements -->
+            <div class="absolute top-4 left-4 lightning-animation">⚡</div>
+            <div class="absolute top-8 right-6 lightning-animation" style="animation-delay: 0.2s;">🚀</div>
+            <div class="absolute top-12 left-12 lightning-animation" style="animation-delay: 0.4s;">💫</div>
+            <div class="absolute top-6 right-12 lightning-animation" style="animation-delay: 0.6s;">✨</div>
+        </div>
+    </div>
+
+    <script>
+        const token = localStorage.getItem('token');
+        if (!token) {
+            alert('Please login first!');
+            window.location.href = 'auth.html';
+        }
+        axios.defaults.headers.common['token'] = token;
+
+        // Load pending tasks on page load
+        document.addEventListener('DOMContentLoaded', loadPendingTasks);
+
+        async function loadPendingTasks() {
+            const list = document.getElementById('task-list');
+            try {
+                const res = await axios.get('/v1/user/gettask');
+                
+                if (res.data.status && Array.isArray(res.data.data)) {
+                    const pendingTasks = res.data.data.filter(task => task.status === 'Pending');
+                    
+                    if (pendingTasks.length === 0) {
+                        list.innerHTML = `
+                            <div class="text-center py-16">
+                                <div class="empty-state rounded-3xl p-12 max-w-md mx-auto">
+                                    <div class="w-24 h-24 bg-gradient-to-br from-yellow-400 to-orange-500 rounded-full flex items-center justify-center mx-auto mb-6">
+                                        <i class="fas fa-clock text-white text-3xl waiting-icon"></i>
+                                    </div>
+                                    <h3 class="text-2xl font-bold text-gray-700 mb-3">No Pending Tasks</h3>
+                                    <p class="text-gray-500 text-lg">All your tasks are either in progress or completed!</p>
+                                    <p class="text-gray-400 mt-2">Great job staying on top of things!</p>
+                                </div>
+                            </div>
+                        `;
+                        return;
+                    }
+
+                    list.innerHTML = '';
+                    pendingTasks.forEach((task, index) => {
+                        const taskElement = document.createElement('div');
+                        taskElement.className = 'task-card rounded-2xl p-6 slide-in';
+                        taskElement.style.animationDelay = `${index * 0.1}s`;
+                        
+                        const priorityClass = task.priority === 'High' ? 'priority-high' : 
+                                            task.priority === 'Medium' ? 'priority-medium' : 'priority-low';
+                        
+                        const priorityIcon = task.priority === 'High' ? '🔴' : 
+                                           task.priority === 'Medium' ? '🟡' : '🟢';
+                        
+                        taskElement.innerHTML = `
+                            <div class="flex items-start justify-between">
+                                <div class="flex-1 mr-6">
+                                    <h3 class="task-title text-2xl font-bold mb-3">${task.title}</h3>
+                                    <p class="text-gray-600 mb-4 leading-relaxed">${task.description || 'No description provided'}</p>
+                                    
+                                    <div class="flex flex-wrap gap-3 mb-4">
+                                        <span class="priority-badge ${priorityClass} px-3 py-1 text-sm rounded-full font-medium flex items-center">
+                                            ${priorityIcon} ${task.priority || 'Low'} Priority
+                                        </span>
+                                        <span class="priority-badge status-pending px-3 py-1 text-sm rounded-full font-medium flex items-center">
+                                            ⏳ ${task.status}
+                                        </span>
+                                        ${task.dueDate ? `
+                                            <span class="priority-badge due-badge px-3 py-1 text-sm rounded-full font-medium flex items-center">
+                                                <i class="fas fa-calendar mr-1"></i>Due: ${new Date(task.dueDate).toLocaleDateString()}
+                                            </span>
+                                        ` : ''}
+                                        ${task.assignees?.length > 0 ? `
+                                            <span class="priority-badge collab-badge px-3 py-1 text-sm rounded-full font-medium flex items-center">
+                                                <i class="fas fa-users mr-1"></i>Collaborative
+                                            </span>
+                                        ` : ''}
+                                    </div>
+                                    
+                                    <div class="text-xs text-gray-500">
+                                        <i class="fas fa-clock mr-1"></i>
+                                        Created: ${new Date(task.createdAt || Date.now()).toLocaleDateString()}
+                                    </div>
+                                </div>
+
+                                <div class="flex flex-col items-center">
+                                    <button onclick="markInProgress('${task._id}', '${task.title}')" 
+                                            class="progress-button text-white py-3 px-6 rounded-xl font-medium flex items-center mb-2">
+                                        <i class="fas fa-rocket mr-2"></i>Start Progress
+                                    </button>
+                                    <div class="text-xs text-gray-500 text-center">
+                                        <i class="fas fa-play mr-1"></i>
+                                        Ready to begin
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+                        list.appendChild(taskElement);
+                    });
+                } else {
+                    list.innerHTML = `
+                        <div class="text-center py-16">
+                            <div class="w-20 h-20 bg-gradient-to-br from-gray-200 to-gray-300 rounded-full flex items-center justify-center mx-auto mb-4">
+                                <i class="fas fa-tasks text-gray-500 text-2xl"></i>
+                            </div>
+                            <p class="text-gray-500 text-xl">No tasks found.</p>
+                            <p class="text-gray-400 mt-2">Create your first task to get started!</p>
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                list.innerHTML = `
+                    <div class="text-center py-12">
+                        <div class="error-message inline-block">
+                            <i class="fas fa-exclamation-triangle mr-2"></i>${error.response?.data?.message || 'Failed to load tasks'}
+                        </div>
+                    </div>
+                `;
+            }
+        }
+
+        async function markInProgress(taskId, taskTitle) {
+            const msg = document.getElementById('task-msg');
+            msg.innerHTML = `
+                <div class="loading-message inline-block">
+                    <i class="fas fa-spinner fa-spin mr-2"></i>Starting "${taskTitle}"...
+                </div>
+            `;
+
+            try {
+                const res = await axios.patch(`/v1/user/inprogress-task/${taskId}`);
+                
+                if (res.data.status) {
+                    // Show success message
+                    msg.innerHTML = `
+                        <div class="success-message inline-block">
+                            <i class="fas fa-rocket mr-2"></i>Task started successfully!
+                        </div>
+                    `;
+                    
+                    // Show success modal with celebration
+                    document.getElementById('success-title').textContent = 'Ready to Launch! 🚀';
+                    document.getElementById('success-message').textContent = `"${taskTitle}" is now in progress. A confirmation email has been sent. Time to make things happen!`;
+                    document.getElementById('success-modal').classList.remove('hidden');
+                    
+                    // Reload tasks after a short delay
+                    setTimeout(() => {
+                        loadPendingTasks();
+                        msg.innerHTML = '';
+                    }, 2000);
+                } else {
+                    msg.innerHTML = `
+                        <div class="error-message inline-block">
+                            <i class="fas fa-exclamation-triangle mr-2"></i>${res.data.message || 'Failed to mark task as in progress'}
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                msg.innerHTML = `
+                    <div class="error-message inline-block">
+                        <i class="fas fa-exclamation-triangle mr-2"></i>${error.response?.data?.message || 'Failed to mark task as in progress'}
+                    </div>
+                `;
+            }
+        }
+
+        function closeSuccessModal() {
+            document.getElementById('success-modal').classList.add('hidden');
+        }
+    </script>
+</body>
+</html>

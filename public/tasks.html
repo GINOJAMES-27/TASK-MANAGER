@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Task Manager</title>
+    <style>
+        body { font-family: Arial, sans-serif; background: #f6f9fb; }
+        .container { max-width: 600px; margin: 40px auto; background: #fff; border-radius: 10px; box-shadow: 0 2px 8px #e3e8ee; padding: 32px 28px; }
+        h2 { text-align: center; color: #2563eb; }
+        input, select, textarea { width: 100%; padding: 8px; margin: 8px 0 16px 0; border: 1px solid #e3e8ee; border-radius: 4px; }
+        button { padding: 8px 16px; background: #2563eb; color: #fff; border: none; border-radius: 4px; font-size: 15px; cursor: pointer; margin-right: 8px;}
+        button:hover { background: #1d4ed8; }
+        .msg { margin: 10px 0; text-align: center; }
+        .task-list { margin-top: 24px; }
+        .task { background: #f6f9fb; border: 1px solid #e3e8ee; border-radius: 8px; padding: 16px; margin-bottom: 12px; }
+        .task .actions { margin-top: 10px; }
+        .hidden { display: none; }
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+</head>
+<body>
+<div class="container">
+    <h2>Task Manager</h2>
+    <div class="msg" id="task-msg"></div>
+
+    <!-- Add Task -->
+    <h3>Add Task</h3>
+    <input type="text" id="task-title" placeholder="Title">
+    <textarea id="task-desc" placeholder="Description"></textarea>
+    <input type="date" id="task-due">
+    <select id="task-priority">
+        <option value="Low">Low</option>
+        <option value="Medium">Medium</option>
+        <option value="High">High</option>
+    </select>
+    <select id="task-status">
+        <option value="Pending">Pending</option>
+        <option value="In Progress">In Progress</option>
+        <option value="Completed">Completed</option>
+    </select>
+    <button onclick="addTask()">Add Task</button>
+
+    <!-- Add Collaborative Task -->
+    <h3>Add Collaborative Task</h3>
+    <input type="text" id="collab-title" placeholder="Title">
+    <textarea id="collab-desc" placeholder="Description"></textarea>
+    <input type="date" id="collab-due">
+    <select id="collab-priority">
+        <option value="Low">Low</option>
+        <option value="Medium">Medium</option>
+        <option value="High">High</option>
+    </select>
+    <select id="collab-status">
+        <option value="Pending">Pending</option>
+        <option value="In Progress">In Progress</option>
+        <option value="Completed">Completed</option>
+    </select>
+    <input type="text" id="collab-assignees" placeholder="Assignee User IDs (comma separated)">
+    <button onclick="addCollabTask()">Add Collaborative Task</button>
+
+    <!-- Task List -->
+    <h3>Your Tasks</h3>
+    <div class="task-list" id="task-list"></div>
+</div>
+
+<script>
+const token = localStorage.getItem('token');
+if (!token) {
+    alert('Please login first!');
+    window.location.href = '/auth.html';
+}
+axios.defaults.headers.common['token'] = token;
+
+// Add Task
+async function addTask() {
+    const title = document.getElementById('task-title').value;
+    const description = document.getElementById('task-desc').value;
+    const dueDate = document.getElementById('task-due').value;
+    const priority = document.getElementById('task-priority').value;
+    const status = document.getElementById('task-status').value;
+    const msg = document.getElementById('task-msg');
+    msg.textContent = 'Adding...';
+
+    try {
+        const res = await axios.post('/v1/user/addtask', { title, description, dueDate, priority, status });
+        msg.textContent = res.data.message;
+        msg.style.color = res.data.status ? 'green' : 'red';
+        if (res.data.status) {
+            loadTasks();
+            document.getElementById('task-title').value = '';
+            document.getElementById('task-desc').value = '';
+            document.getElementById('task-due').value = '';
+        }
+    } catch (error) {
+        msg.textContent = error.response?.data?.message || 'Failed to add task';
+        msg.style.color = 'red';
+    }
+}
+
+// Add Collaborative Task
+async function addCollabTask() {
+    const title = document.getElementById('collab-title').value;
+    const description = document.getElementById('collab-desc').value;
+    const dueDate = document.getElementById('collab-due').value;
+    const priority = document.getElementById('collab-priority').value;
+    const status = document.getElementById('collab-status').value;
+    const assignees = document.getElementById('collab-assignees').value
+        .split(',').map(s => s.trim()).filter(Boolean);
+    const msg = document.getElementById('task-msg');
+    msg.textContent = 'Adding collaborative task...';
+
+    try {
+        const res = await axios.post('/v1/user/add-collab-task', { title, description, dueDate, priority, status, assignees });
+        msg.textContent = res.data.message;
+        msg.style.color = res.data.status ? 'green' : 'red';
+        if (res.data.status) {
+            loadTasks();
+            document.getElementById('collab-title').value = '';
+            document.getElementById('collab-desc').value = '';
+            document.getElementById('collab-due').value = '';
+            document.getElementById('collab-assignees').value = '';
+        }
+    } catch (error) {
+        msg.textContent = error.response?.data?.message || 'Failed to add collaborative task';
+        msg.style.color = 'red';
+    }
+}
+
+// Load Tasks
+async function loadTasks() {
+    const list = document.getElementById('task-list');
+    list.innerHTML = 'Loading...';
+    try {
+        const res = await axios.get('/v1/user/gettask');
+        if (res.data.status && Array.isArray(res.data.data)) {
+            list.innerHTML = '';
+            res.data.data.forEach(task => {
+                list.innerHTML += `
+                <div class="task" id="task-${task._id}">
+                    <b>${task.title}</b> (${task.status})<br>
+                    <small>Due: ${task.dueDate ? new Date(task.dueDate).toLocaleDateString() : 'No due date'}</small><br>
+                    <small>Priority: ${task.priority || 'Low'}</small><br>
+                    <small>Description: ${task.description || ''}</small><br>
+                    <small>Assignees: ${(task.assignees || []).join(', ')}</small>
+                    <div class="actions">
+                        <button onclick="showUpdate('${task._id}')">Update</button>
+                        <button onclick="deleteTask('${task._id}')">Delete</button>
+                    </div>
+                    <div class="hidden" id="update-box-${task._id}">
+                        <input type="text" id="update-title-${task._id}" value="${task.title}" placeholder="Title">
+                        <textarea id="update-desc-${task._id}" placeholder="Description">${task.description || ''}</textarea>
+                        <input type="date" id="update-due-${task._id}" value="${task.dueDate ? task.dueDate.split('T')[0] : ''}">
+                        <select id="update-priority-${task._id}">
+                            <option value="Low" ${task.priority === 'Low' ? 'selected' : ''}>Low</option>
+                            <option value="Medium" ${task.priority === 'Medium' ? 'selected' : ''}>Medium</option>
+                            <option value="High" ${task.priority === 'High' ? 'selected' : ''}>High</option>
+                        </select>
+                        <select id="update-status-${task._id}">
+                            <option value="Pending" ${task.status === 'Pending' ? 'selected' : ''}>Pending</option>
+                            <option value="In Progress" ${task.status === 'In Progress' ? 'selected' : ''}>In Progress</option>
+                            <option value="Completed" ${task.status === 'Completed' ? 'selected' : ''}>Completed</option>
+                        </select>
+                        <input type="text" id="update-assignees-${task._id}" value="${(task.assignees || []).join(', ')}" placeholder="Assignee User IDs (comma separated)">
+                        <button onclick="updateTask('${task._id}')">Save</button>
+                        <button onclick="hideUpdate('${task._id}')">Cancel</button>
+                    </div>
+                </div>
+                `;
+            });
+        } else {
+            list.innerHTML = 'No tasks found.';
+        }
+    } catch (error) {
+        list.innerHTML = error.response?.data?.message || 'Failed to load tasks';
+    }
+}
+
+// Show update box
+function showUpdate(id) {
+    document.getElementById(`update-box-${id}`).classList.remove('hidden');
+}
+// Hide update box
+function hideUpdate(id) {
+    document.getElementById(`update-box-${id}`).classList.add('hidden');
+}
+
+// Update Task (handles both personal and collaborative)
+async function updateTask(id) {
+    const title = document.getElementById(`update-title-${id}`).value;
+    const description = document.getElementById(`update-desc-${id}`).value;
+    const dueDate = document.getElementById(`update-due-${id}`).value;
+    const priority = document.getElementById(`update-priority-${id}`).value;
+    const status = document.getElementById(`update-status-${id}`).value;
+    const assignees = document.getElementById(`update-assignees-${id}`).value
+        .split(',').map(s => s.trim()).filter(Boolean);
+    const msg = document.getElementById('task-msg');
+    msg.textContent = 'Updating...';
+
+    try {
+        // If assignees are present, use collab update route
+        let res;
+        if (assignees.length > 0) {
+            res = await axios.put(`/v1/user/update-collab-task/${id}`, { title, description, dueDate, priority, status, assignees });
+        } else {
+            res = await axios.put(`/v1/user/updatetask/${id}`, { title, description, dueDate, priority, status });
+        }
+        msg.textContent = res.data.message;
+        msg.style.color = res.data.status ? 'green' : 'red';
+        if (res.data.status) {
+            loadTasks();
+        }
+    } catch (error) {
+        msg.textContent = error.response?.data?.message || 'Failed to update task';
+        msg.style.color = 'red';
+    }
+}
+
+// Delete Task
+async function deleteTask(id) {
+    const msg = document.getElementById('task-msg');
+    msg.textContent = 'Deleting...';
+    try {
+        const res = await axios.delete(`/v1/user/deletetask/${id}`);
+        msg.textContent = res.data.message;
+        msg.style.color = res.data.status ? 'green' : 'red';
+        if (res.data.status) {
+            // Remove the task from the DOM immediately
+            const taskElem = document.getElementById(`task-${id}`);
+            if (taskElem) taskElem.remove();
+            // Optionally, you can remove the loadTasks() call here
+            // loadTasks();
+        }
+    } catch (error) {
+        msg.textContent = error.response?.data?.message || 'Failed to delete task';
+        msg.style.color = 'red';
+    }
+}
+
+// Initial load
+loadTasks();
+</script>
+</body>
+</html>

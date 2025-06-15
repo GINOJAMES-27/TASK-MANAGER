@@ -1,0 +1,439 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Add Task</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+        }
+        
+        .navbar-glass {
+            backdrop-filter: blur(20px);
+            background: rgba(255, 255, 255, 0.15);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .main-card {
+            backdrop-filter: blur(20px);
+            background: rgba(255, 255, 255, 0.95);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.15);
+            transition: all 0.4s ease;
+        }
+        
+        .main-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 35px 70px rgba(0, 0, 0, 0.2);
+        }
+        
+        .form-section {
+            backdrop-filter: blur(10px);
+            background: rgba(255, 255, 255, 0.8);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            transition: all 0.3s ease;
+        }
+        
+        .form-section:hover {
+            background: rgba(255, 255, 255, 0.9);
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+        }
+        
+        .input-field {
+            backdrop-filter: blur(5px);
+            background: rgba(255, 255, 255, 0.9);
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            transition: all 0.3s ease;
+        }
+        
+        .input-field:focus {
+            background: rgba(255, 255, 255, 1);
+            border-color: #667eea;
+            box-shadow: 0 0 20px rgba(102, 126, 234, 0.3);
+            transform: translateY(-1px);
+        }
+        
+        .gradient-button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .gradient-button::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+            transition: left 0.5s ease;
+        }
+        
+        .gradient-button:hover::before {
+            left: 100%;
+        }
+        
+        .gradient-button:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 15px 35px rgba(102, 126, 234, 0.4);
+        }
+        
+        .gradient-button-green {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+        }
+        
+        .gradient-button-green:hover {
+            box-shadow: 0 15px 35px rgba(16, 185, 129, 0.4);
+        }
+        
+        .back-button {
+            background: linear-gradient(135deg, #6b7280 0%, #4b5563 100%);
+            transition: all 0.3s ease;
+        }
+        
+        .back-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(107, 114, 128, 0.4);
+        }
+        
+        .main-title {
+            color: white;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+            font-weight: 700;
+        }
+        
+        .section-title {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        .icon-glow {
+            filter: drop-shadow(0 0 8px rgba(255, 255, 255, 0.5));
+        }
+        
+        .floating-animation {
+            animation: float 6s ease-in-out infinite;
+        }
+        
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-5px); }
+        }
+        
+        .fade-in {
+            animation: fadeIn 0.8s ease-in forwards;
+            opacity: 0;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        /* Animated background elements */
+        .bg-shapes {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            z-index: -1;
+        }
+        
+        .shape {
+            position: absolute;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 50%;
+            animation: drift 30s infinite linear;
+        }
+        
+        .shape:nth-child(1) {
+            width: 80px;
+            height: 80px;
+            top: 10%;
+            left: 10%;
+            animation-delay: 0s;
+        }
+        
+        .shape:nth-child(2) {
+            width: 120px;
+            height: 120px;
+            top: 70%;
+            right: 15%;
+            animation-delay: -10s;
+        }
+        
+        .shape:nth-child(3) {
+            width: 100px;
+            height: 100px;
+            top: 40%;
+            left: 85%;
+            animation-delay: -20s;
+        }
+        
+        @keyframes drift {
+            0% { transform: translateY(0px) rotate(0deg); }
+            100% { transform: translateY(-100vh) rotate(360deg); }
+        }
+        
+        .label-text {
+            font-weight: 600;
+            color: #374151;
+        }
+        
+        .success-message {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            color: white;
+            border-radius: 12px;
+            padding: 12px 20px;
+            box-shadow: 0 10px 25px rgba(16, 185, 129, 0.3);
+        }
+        
+        .error-message {
+            background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+            color: white;
+            border-radius: 12px;
+            padding: 12px 20px;
+            box-shadow: 0 10px 25px rgba(239, 68, 68, 0.3);
+        }
+        
+        .priority-select {
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.9) 0%, rgba(248, 250, 252, 0.9) 100%);
+        }
+        
+        .divider {
+            background: linear-gradient(90deg, transparent, rgba(102, 126, 234, 0.3), transparent);
+            height: 2px;
+        }
+    </style>
+</head>
+<body>
+    <!-- Animated background shapes -->
+    <div class="bg-shapes">
+        <div class="shape"></div>
+        <div class="shape"></div>
+        <div class="shape"></div>
+    </div>
+
+    <nav class="navbar-glass p-4 text-white shadow-xl">
+        <div class="container mx-auto flex justify-between items-center">
+            <h1 class="text-2xl font-bold main-title flex items-center">
+                <i class="fas fa-plus-circle icon-glow mr-3"></i>
+                Add New Task
+            </h1>
+            <a href="dashboard.html" class="back-button px-6 py-2 rounded-xl flex items-center font-medium text-white">
+                <i class="fas fa-arrow-left mr-2"></i>Back to Dashboard
+            </a>
+        </div>
+    </nav>
+
+    <div class="container mx-auto p-6 max-w-4xl">
+        <div class="main-card rounded-3xl p-8 fade-in">
+            <h2 class="text-4xl font-bold mb-2 text-center section-title floating-animation">Create Your Task</h2>
+            <p class="text-gray-600 text-center mb-8">Stay organized and boost your productivity</p>
+            
+            <div id="task-msg" class="text-center mb-6"></div>
+
+            <!-- Personal Task Section -->
+            <div class="form-section rounded-2xl p-6 mb-8">
+                <div class="flex items-center mb-6">
+                    <div class="w-12 h-12 bg-gradient-to-br from-blue-400 to-blue-600 rounded-xl flex items-center justify-center mr-4">
+                        <i class="fas fa-user text-white text-xl"></i>
+                    </div>
+                    <h3 class="text-2xl font-bold section-title">Personal Task</h3>
+                </div>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="md:col-span-2">
+                        <label class="block label-text mb-2">
+                            <i class="fas fa-heading mr-2 text-blue-500"></i>Task Title
+                        </label>
+                        <input type="text" id="task-title" class="input-field w-full p-4 rounded-xl border-0 outline-none" placeholder="Enter your task title...">
+                    </div>
+
+                    <div class="md:col-span-2">
+                        <label class="block label-text mb-2">
+                            <i class="fas fa-align-left mr-2 text-blue-500"></i>Description
+                        </label>
+                        <textarea id="task-desc" class="input-field w-full p-4 rounded-xl border-0 outline-none" rows="4" placeholder="Describe your task in detail..."></textarea>
+                    </div>
+
+                    <div>
+                        <label class="block label-text mb-2">
+                            <i class="fas fa-calendar mr-2 text-blue-500"></i>Due Date
+                        </label>
+                        <input type="date" id="task-due" class="input-field w-full p-4 rounded-xl border-0 outline-none">
+                    </div>
+
+                    <div>
+                        <label class="block label-text mb-2">
+                            <i class="fas fa-flag mr-2 text-blue-500"></i>Priority Level
+                        </label>
+                        <select id="task-priority" class="input-field priority-select w-full p-4 rounded-xl border-0 outline-none">
+                            <option value="Low">🟢 Low Priority</option>
+                            <option value="Medium">🟡 Medium Priority</option>
+                            <option value="High">🔴 High Priority</option>
+                        </select>
+                    </div>
+
+                    <div class="md:col-span-2">
+                        <label class="block label-text mb-2">
+                            <i class="fas fa-tasks mr-2 text-blue-500"></i>Current Status
+                        </label>
+                        <select id="task-status" class="input-field priority-select w-full p-4 rounded-xl border-0 outline-none">
+                            <option value="Pending">⏳ Pending</option>
+                            <option value="In Progress">🚀 In Progress</option>
+                            <option value="Completed">✅ Completed</option>
+                        </select>
+                    </div>
+                </div>
+
+                <button onclick="addTask()" class="gradient-button w-full text-white py-4 px-8 rounded-xl font-bold text-lg mt-6 flex items-center justify-center">
+                    <i class="fas fa-plus mr-3"></i>Create Personal Task
+                </button>
+            </div>
+
+            <!-- Divider -->
+            <div class="divider my-8"></div>
+
+            <!-- Collaborative Task Section -->
+            <div class="form-section rounded-2xl p-6">
+                <div class="flex items-center mb-6">
+                    <div class="w-12 h-12 bg-gradient-to-br from-green-400 to-green-600 rounded-xl flex items-center justify-center mr-4">
+                        <i class="fas fa-users text-white text-xl"></i>
+                    </div>
+                    <h3 class="text-2xl font-bold section-title">Collaborative Task</h3>
+                </div>
+                
+                <div class="space-y-6">
+                    <div>
+                        <label class="block label-text mb-2">
+                            <i class="fas fa-user-friends mr-2 text-green-500"></i>Team Assignees
+                        </label>
+                        <input type="text" id="collab-assignees" class="input-field w-full p-4 rounded-xl border-0 outline-none" placeholder="Enter user IDs separated by commas (e.g., user1, user2, user3)">
+                        <p class="text-sm text-gray-500 mt-2">💡 Tip: Add multiple team members to collaborate on this task</p>
+                    </div>
+
+                    <button onclick="addCollabTask()" class="gradient-button-green w-full text-white py-4 px-8 rounded-xl font-bold text-lg flex items-center justify-center">
+                        <i class="fas fa-users mr-3"></i>Create Collaborative Task
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const token = localStorage.getItem('token');
+        if (!token) {
+            alert('Please login first!');
+            window.location.href = 'auth.html';
+        }
+        axios.defaults.headers.common['token'] = token;
+
+        async function addTask() {
+            const title = document.getElementById('task-title').value;
+            const description = document.getElementById('task-desc').value;
+            const dueDate = document.getElementById('task-due').value;
+            const priority = document.getElementById('task-priority').value;
+            const status = document.getElementById('task-status').value;
+            const msg = document.getElementById('task-msg');
+            
+            if (!title.trim()) {
+                msg.innerHTML = '<div class="error-message"><i class="fas fa-exclamation-triangle mr-2"></i>Please enter a task title</div>';
+                return;
+            }
+            
+            msg.innerHTML = '<div class="text-blue-600 font-medium"><i class="fas fa-spinner fa-spin mr-2"></i>Creating your task...</div>';
+
+            try {
+                const res = await axios.post('/v1/user/addtask', { title, description, dueDate, priority, status });
+                msg.innerHTML = `<div class="success-message"><i class="fas fa-check-circle mr-2"></i>${res.data.message}</div>`;
+                
+                if (res.data.status) {
+                    // Clear form with animation
+                    setTimeout(() => {
+                        document.getElementById('task-title').value = '';
+                        document.getElementById('task-desc').value = '';
+                        document.getElementById('task-due').value = '';
+                        document.getElementById('task-priority').selectedIndex = 0;
+                        document.getElementById('task-status').selectedIndex = 0;
+                    }, 1500);
+                }
+            } catch (error) {
+                msg.innerHTML = `<div class="error-message"><i class="fas fa-times-circle mr-2"></i>${error.response?.data?.message || 'Failed to add task'}</div>`;
+            }
+        }
+
+        async function addCollabTask() {
+            const title = document.getElementById('task-title').value;
+            const description = document.getElementById('task-desc').value;
+            const dueDate = document.getElementById('task-due').value;
+            const priority = document.getElementById('task-priority').value;
+            const status = document.getElementById('task-status').value;
+            const assignees = document.getElementById('collab-assignees').value
+                .split(',').map(s => s.trim()).filter(Boolean);
+            const msg = document.getElementById('task-msg');
+            
+            if (!title.trim()) {
+                msg.innerHTML = '<div class="error-message"><i class="fas fa-exclamation-triangle mr-2"></i>Please enter a task title</div>';
+                return;
+            }
+            
+            if (assignees.length === 0) {
+                msg.innerHTML = '<div class="error-message"><i class="fas fa-exclamation-triangle mr-2"></i>Please add at least one assignee</div>';
+                return;
+            }
+            
+            msg.innerHTML = '<div class="text-green-600 font-medium"><i class="fas fa-spinner fa-spin mr-2"></i>Creating collaborative task...</div>';
+
+            try {
+                const res = await axios.post('/v1/user/add-collab-task', { 
+                    title, description, dueDate, priority, status, assignees 
+                });
+                msg.innerHTML = `<div class="success-message"><i class="fas fa-check-circle mr-2"></i>${res.data.message}</div>`;
+                
+                if (res.data.status) {
+                    // Clear form with animation
+                    setTimeout(() => {
+                        document.getElementById('task-title').value = '';
+                        document.getElementById('task-desc').value = '';
+                        document.getElementById('task-due').value = '';
+                        document.getElementById('task-priority').selectedIndex = 0;
+                        document.getElementById('task-status').selectedIndex = 0;
+                        document.getElementById('collab-assignees').value = '';
+                    }, 1500);
+                }
+            } catch (error) {
+                msg.innerHTML = `<div class="error-message"><i class="fas fa-times-circle mr-2"></i>${error.response?.data?.message || 'Failed to add collaborative task'}</div>`;
+            }
+        }
+
+        // Add some interactivity
+        document.addEventListener('DOMContentLoaded', function() {
+            // Add focus effects to inputs
+            const inputs = document.querySelectorAll('.input-field');
+            inputs.forEach(input => {
+                input.addEventListener('focus', function() {
+                    this.parentElement.style.transform = 'scale(1.02)';
+                });
+                
+                input.addEventListener('blur', function() {
+                    this.parentElement.style.transform = 'scale(1)';
+                });
+            });
+        });
+    </script>
+</body>
+</html>

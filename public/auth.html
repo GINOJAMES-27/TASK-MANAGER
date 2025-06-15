@@ -1,0 +1,437 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Auth System</title>
+    <!-- Tailwind CSS via CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Enhanced modern styles */
+        .hidden { display: none; }
+        
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+        }
+        
+        .auth-container {
+            backdrop-filter: blur(20px);
+            background: rgba(255, 255, 255, 0.95);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.15);
+        }
+        
+        .glass-input {
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            transition: all 0.3s ease;
+        }
+        
+        .glass-input:focus {
+            background: rgba(255, 255, 255, 0.95);
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+            transform: translateY(-1px);
+        }
+        
+        .gradient-button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .gradient-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(102, 126, 234, 0.3);
+        }
+        
+        .gradient-button:active {
+            transform: translateY(0px);
+        }
+        
+        .gradient-button::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+            transition: left 0.5s;
+        }
+        
+        .gradient-button:hover::before {
+            left: 100%;
+        }
+        
+        .floating-animation {
+            animation: float 6s ease-in-out infinite;
+        }
+        
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+        }
+        
+        .fade-in {
+            animation: fadeIn 0.5s ease-in;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .link-hover {
+            position: relative;
+            transition: color 0.3s ease;
+        }
+        
+        .link-hover::after {
+            content: '';
+            position: absolute;
+            width: 0;
+            height: 2px;
+            bottom: -2px;
+            left: 0;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            transition: width 0.3s ease;
+        }
+        
+        .link-hover:hover::after {
+            width: 100%;
+        }
+        
+        .title-gradient {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        .message-success {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            color: white;
+        }
+        
+        .message-error {
+            background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+            color: white;
+        }
+        
+        /* Animated background elements */
+        .bg-shapes {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            z-index: -1;
+        }
+        
+        .shape {
+            position: absolute;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 50%;
+            animation: drift 20s infinite linear;
+        }
+        
+        .shape:nth-child(1) {
+            width: 80px;
+            height: 80px;
+            top: 10%;
+            left: 10%;
+            animation-delay: 0s;
+        }
+        
+        .shape:nth-child(2) {
+            width: 120px;
+            height: 120px;
+            top: 70%;
+            right: 10%;
+            animation-delay: -5s;
+        }
+        
+        .shape:nth-child(3) {
+            width: 60px;
+            height: 60px;
+            top: 40%;
+            left: 70%;
+            animation-delay: -10s;
+        }
+        
+        @keyframes drift {
+            0% { transform: translateY(0px) rotate(0deg); }
+            100% { transform: translateY(-100vh) rotate(360deg); }
+        }
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+</head>
+<body>
+    <!-- Animated background shapes -->
+    <div class="bg-shapes">
+        <div class="shape"></div>
+        <div class="shape"></div>
+        <div class="shape"></div>
+    </div>
+
+    <!-- Register Box -->
+    <div class="max-w-md mx-auto auth-container rounded-2xl overflow-hidden p-8 my-10 floating-animation fade-in" id="register-box">
+        <h2 class="text-3xl font-bold text-center title-gradient mb-8">Create Account</h2>
+        <div class="text-center mb-6 p-3 rounded-lg" id="register-msg"></div>
+        
+        <div class="space-y-5">
+            <input class="w-full px-4 py-3 glass-input rounded-xl focus:outline-none text-gray-700 placeholder-gray-500" 
+                   type="text" id="reg-name" placeholder="Full Name" required>
+            <input class="w-full px-4 py-3 glass-input rounded-xl focus:outline-none text-gray-700 placeholder-gray-500" 
+                   type="email" id="reg-email" placeholder="Email Address" required>
+            <input class="w-full px-4 py-3 glass-input rounded-xl focus:outline-none text-gray-700 placeholder-gray-500" 
+                   type="password" id="reg-password" placeholder="Password" required>
+            <input class="w-full px-4 py-3 glass-input rounded-xl focus:outline-none text-gray-700 placeholder-gray-500" 
+                   type="text" id="reg-phone" placeholder="Phone (10 digits)" required>
+            <select class="w-full px-4 py-3 glass-input rounded-xl focus:outline-none text-gray-700" 
+                    id="reg-role">
+                <option value="enduser">User</option>
+                <option value="admin">Admin</option>
+            </select>
+            <button class="w-full gradient-button text-white font-semibold py-3 px-4 rounded-xl transition duration-300" 
+                    onclick="register()">Create Account</button>
+        </div>
+        
+        <div class="text-center mt-6 text-gray-600">
+            Already have an account? 
+            <a class="text-purple-600 hover:text-purple-700 font-medium cursor-pointer link-hover" onclick="showLogin()">Sign In</a>
+        </div>
+    </div>
+
+    <!-- Verify OTP Box -->
+    <div class="max-w-md mx-auto auth-container rounded-2xl overflow-hidden p-8 my-10 floating-animation fade-in hidden" id="verify-otp-box">
+        <h2 class="text-3xl font-bold text-center title-gradient mb-8">Verify Your Email</h2>
+        <div class="text-center mb-6 p-3 rounded-lg" id="otp-msg"></div>
+        
+        <div class="space-y-5">
+            <input class="w-full px-4 py-3 glass-input rounded-xl focus:outline-none text-gray-700 placeholder-gray-500" 
+                   type="email" id="otp-email" placeholder="Email Address" required>
+            <input class="w-full px-4 py-3 glass-input rounded-xl focus:outline-none text-gray-700 placeholder-gray-500" 
+                   type="text" id="otp-code" placeholder="Enter Verification Code" required>
+            <button class="w-full gradient-button text-white font-semibold py-3 px-4 rounded-xl transition duration-300" 
+                    onclick="verifyOtp()">Verify Email</button>
+        </div>
+        
+        <div class="text-center mt-6 text-gray-600">
+            <a class="text-purple-600 hover:text-purple-700 font-medium cursor-pointer link-hover" onclick="showLogin()">Back to Sign In</a>
+        </div>
+    </div>
+
+    <!-- Login Box -->
+    <div class="max-w-md mx-auto auth-container rounded-2xl overflow-hidden p-8 my-10 floating-animation fade-in hidden" id="login-box">
+        <h2 class="text-3xl font-bold text-center title-gradient mb-8">Welcome Back</h2>
+        <div class="text-center mb-6 p-3 rounded-lg" id="login-msg"></div>
+        
+        <div class="space-y-5">
+            <input class="w-full px-4 py-3 glass-input rounded-xl focus:outline-none text-gray-700 placeholder-gray-500" 
+                   type="email" id="login-email" placeholder="Email Address" required>
+            <input class="w-full px-4 py-3 glass-input rounded-xl focus:outline-none text-gray-700 placeholder-gray-500" 
+                   type="password" id="login-password" placeholder="Password" required>
+            <button class="w-full gradient-button text-white font-semibold py-3 px-4 rounded-xl transition duration-300" 
+                    onclick="login()">Sign In</button>
+        </div>
+        
+        <div class="text-center mt-6 text-gray-600">
+            <a class="text-purple-600 hover:text-purple-700 font-medium cursor-pointer link-hover" onclick="showRegister()">Create Account</a> 
+            <span class="mx-2">•</span> 
+            <a class="text-purple-600 hover:text-purple-700 font-medium cursor-pointer link-hover" onclick="showForget()">Forgot Password?</a>
+        </div>
+    </div>
+
+    <!-- Forget Password Box -->
+    <div class="max-w-md mx-auto auth-container rounded-2xl overflow-hidden p-8 my-10 floating-animation fade-in hidden" id="forget-box">
+        <h2 class="text-3xl font-bold text-center title-gradient mb-8">Reset Password</h2>
+        <div class="text-center mb-6 p-3 rounded-lg" id="forget-msg"></div>
+        
+        <div class="space-y-5">
+            <input class="w-full px-4 py-3 glass-input rounded-xl focus:outline-none text-gray-700 placeholder-gray-500" 
+                   type="email" id="forget-email" placeholder="Email Address" required>
+            <button class="w-full gradient-button text-white font-semibold py-3 px-4 rounded-xl transition duration-300" 
+                    onclick="forgetPassword()">Send Reset Code</button>
+        </div>
+        
+        <div class="text-center mt-6 text-gray-600">
+            <a class="text-purple-600 hover:text-purple-700 font-medium cursor-pointer link-hover" onclick="showLogin()">Back to Sign In</a>
+        </div>
+    </div>
+
+    <!-- Reset Password Box -->
+    <div class="max-w-md mx-auto auth-container rounded-2xl overflow-hidden p-8 my-10 floating-animation fade-in hidden" id="reset-box">
+        <h2 class="text-3xl font-bold text-center title-gradient mb-8">Create New Password</h2>
+        <div class="text-center mb-6 p-3 rounded-lg" id="reset-msg"></div>
+        
+        <div class="space-y-5">
+            <input class="w-full px-4 py-3 glass-input rounded-xl focus:outline-none text-gray-700 placeholder-gray-500" 
+                   type="email" id="reset-email" placeholder="Email Address" required>
+            <input class="w-full px-4 py-3 glass-input rounded-xl focus:outline-none text-gray-700 placeholder-gray-500" 
+                   type="text" id="reset-otp" placeholder="Enter Reset Code" required>
+            <input class="w-full px-4 py-3 glass-input rounded-xl focus:outline-none text-gray-700 placeholder-gray-500" 
+                   type="password" id="reset-password" placeholder="New Password" required>
+            <button class="w-full gradient-button text-white font-semibold py-3 px-4 rounded-xl transition duration-300" 
+                    onclick="resetPassword()">Update Password</button>
+        </div>
+        
+        <div class="text-center mt-6 text-gray-600">
+            <a class="text-purple-600 hover:text-purple-700 font-medium cursor-pointer link-hover" onclick="showLogin()">Back to Sign In</a>
+        </div>
+    </div>
+
+    <!-- Your original JavaScript (unchanged) -->
+    <script>
+    function showRegister() {
+        hideAll();
+        document.getElementById('register-box').classList.remove('hidden');
+    }
+    function showLogin() {
+        hideAll();
+        document.getElementById('login-box').classList.remove('hidden');
+    }
+    function showForget() {
+        hideAll();
+        document.getElementById('forget-box').classList.remove('hidden');
+    }
+    function showReset() {
+        hideAll();
+        document.getElementById('reset-box').classList.remove('hidden');
+    }
+    function showOtp() {
+        hideAll();
+        document.getElementById('verify-otp-box').classList.remove('hidden');
+    }
+    function hideAll() {
+        document.getElementById('register-box').classList.add('hidden');
+        document.getElementById('login-box').classList.add('hidden');
+        document.getElementById('forget-box').classList.add('hidden');
+        document.getElementById('reset-box').classList.add('hidden');
+        document.getElementById('verify-otp-box').classList.add('hidden');
+    }
+
+    // Enhanced message styling
+    function showMessage(elementId, message, isSuccess) {
+        const msgElement = document.getElementById(elementId);
+        msgElement.textContent = message;
+        msgElement.className = isSuccess ? 
+            'text-center mb-6 p-3 rounded-lg message-success' : 
+            'text-center mb-6 p-3 rounded-lg message-error';
+    }
+
+    // Register
+    async function register() {
+        const name = document.getElementById('reg-name').value;
+        const email = document.getElementById('reg-email').value;
+        const password = document.getElementById('reg-password').value;
+        const phone = document.getElementById('reg-phone').value;
+        const role = document.getElementById('reg-role').value;
+        showMessage('register-msg', 'Creating your account...', true);
+
+        try {
+            const res = await axios.post('/v1/admin/register', { name, email, password, phone, role });
+            showMessage('register-msg', res.data.message, res.data.status);
+            if (res.data.status) {
+                document.getElementById('otp-email').value = email;
+                setTimeout(() => showOtp(), 1000);
+            }
+        } catch (error) {
+            showMessage('register-msg', error.response?.data?.message || 'Registration failed', false);
+        }
+    }
+
+    // Verify OTP
+    async function verifyOtp() {
+        const email = document.getElementById('otp-email').value;
+        const otp = document.getElementById('otp-code').value;
+        showMessage('otp-msg', 'Verifying your email...', true);
+
+        try {
+            const res = await axios.post('/v1/admin/verify-otp', { email, otp });
+            showMessage('otp-msg', res.data.message, res.data.status);
+            if (res.data.status) {
+                if (res.data.token) localStorage.setItem('token', res.data.token);
+                setTimeout(() => {
+                    if (res.data.role === 'admin') {
+                        window.location.href = 'admin-dashboard.html';
+                    } else {
+                        window.location.href = 'dashboard.html';
+                    }
+                }, 1000);
+            }
+        } catch (error) {
+            showMessage('otp-msg', error.response?.data?.message || 'OTP verification failed', false);
+        }
+    }
+
+    // Login
+    async function login() {
+        const email = document.getElementById('login-email').value;
+        const password = document.getElementById('login-password').value;
+        showMessage('login-msg', 'Signing you in...', true);
+
+        try {
+            const res = await axios.post('/v1/admin/login', { email, password });
+            showMessage('login-msg', res.data.message, res.data.status);
+            if (res.data.status) {
+                localStorage.setItem('token', res.data.token);
+                setTimeout(() => {
+                    if (res.data.role === 'admin') {
+                        window.location.href = 'admin-dashboard.html';
+                    } else {
+                        window.location.href = 'dashboard.html';
+                    }
+                }, 1000);
+            }
+        } catch (error) {
+            showMessage('login-msg', error.response?.data?.message || 'Login failed', false);
+        }
+    }
+
+    // Forget Password
+    async function forgetPassword() {
+        const email = document.getElementById('forget-email').value;
+        showMessage('forget-msg', 'Sending reset code...', true);
+
+        try {
+            const res = await axios.post('/v1/user/forget-password', { email });
+            showMessage('forget-msg', res.data.message, res.data.status);
+            if (res.data.status) {
+                document.getElementById('reset-email').value = email;
+                setTimeout(() => showReset(), 1000);
+            }
+        } catch (error) {
+            showMessage('forget-msg', error.response?.data?.message || 'Failed to send reset code', false);
+        }
+    }
+
+    // Reset Password
+    async function resetPassword() {
+        const email = document.getElementById('reset-email').value;
+        const otp = document.getElementById('reset-otp').value;
+        const password = document.getElementById('reset-password').value;
+        showMessage('reset-msg', 'Updating your password...', true);
+
+        try {
+            const res = await axios.post('/v1/user/reset-password', { email, otp, password });
+            showMessage('reset-msg', res.data.message, res.data.status);
+            if (res.data.status) {
+                setTimeout(showLogin, 1500);
+            }
+        } catch (error) {
+            showMessage('reset-msg', error.response?.data?.message || 'Password reset failed', false);
+        }
+    }
+
+    // Show login by default
+    showLogin();
+    </script>
+</body>
+</html>

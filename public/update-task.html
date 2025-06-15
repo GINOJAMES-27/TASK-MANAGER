@@ -1,0 +1,622 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Update Tasks</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+        }
+        
+        .navbar-glass {
+            backdrop-filter: blur(20px);
+            background: rgba(255, 255, 255, 0.15);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .main-card {
+            backdrop-filter: blur(20px);
+            background: rgba(255, 255, 255, 0.95);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.15);
+            transition: all 0.4s ease;
+        }
+        
+        .task-card {
+            backdrop-filter: blur(10px);
+            background: rgba(255, 255, 255, 0.9);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .task-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+            transition: left 0.6s ease;
+        }
+        
+        .task-card:hover::before {
+            left: 100%;
+        }
+        
+        .task-card:hover {
+            background: rgba(255, 255, 255, 0.95);
+            transform: translateY(-5px);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+        }
+        
+        .input-field {
+            backdrop-filter: blur(5px);
+            background: rgba(255, 255, 255, 0.9);
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            transition: all 0.3s ease;
+        }
+        
+        .input-field:focus {
+            background: rgba(255, 255, 255, 1);
+            border-color: #667eea;
+            box-shadow: 0 0 20px rgba(102, 126, 234, 0.3);
+            transform: translateY(-1px);
+        }
+        
+        .gradient-button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .gradient-button::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+            transition: left 0.5s ease;
+        }
+        
+        .gradient-button:hover::before {
+            left: 100%;
+        }
+        
+        .gradient-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(102, 126, 234, 0.4);
+        }
+        
+        .gradient-button-green {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+        }
+        
+        .gradient-button-green:hover {
+            box-shadow: 0 10px 25px rgba(16, 185, 129, 0.4);
+        }
+        
+        .gradient-button-yellow {
+            background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+        }
+        
+        .gradient-button-yellow:hover {
+            box-shadow: 0 10px 25px rgba(245, 158, 11, 0.4);
+        }
+        
+        .gradient-button-red {
+            background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+        }
+        
+        .gradient-button-red:hover {
+            box-shadow: 0 10px 25px rgba(239, 68, 68, 0.4);
+        }
+        
+        .back-button {
+            background: linear-gradient(135deg, #6b7280 0%, #4b5563 100%);
+            transition: all 0.3s ease;
+        }
+        
+        .back-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(107, 114, 128, 0.4);
+        }
+        
+        .main-title {
+            color: white;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+            font-weight: 700;
+        }
+        
+        .section-title {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        .icon-glow {
+            filter: drop-shadow(0 0 8px rgba(255, 255, 255, 0.5));
+        }
+        
+        .floating-animation {
+            animation: float 6s ease-in-out infinite;
+        }
+        
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-5px); }
+        }
+        
+        .fade-in {
+            animation: fadeIn 0.8s ease-in forwards;
+            opacity: 0;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .slide-in {
+            animation: slideIn 0.6s ease-out forwards;
+            opacity: 0;
+            transform: translateX(-30px);
+        }
+        
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateX(-30px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+        
+        /* Animated background elements */
+        .bg-shapes {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            z-index: -1;
+        }
+        
+        .shape {
+            position: absolute;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 50%;
+            animation: drift 30s infinite linear;
+        }
+        
+        .shape:nth-child(1) {
+            width: 80px;
+            height: 80px;
+            top: 10%;
+            left: 10%;
+            animation-delay: 0s;
+        }
+        
+        .shape:nth-child(2) {
+            width: 120px;
+            height: 120px;
+            top: 70%;
+            right: 15%;
+            animation-delay: -10s;
+        }
+        
+        .shape:nth-child(3) {
+            width: 100px;
+            height: 100px;
+            top: 40%;
+            left: 85%;
+            animation-delay: -20s;
+        }
+        
+        @keyframes drift {
+            0% { transform: translateY(0px) rotate(0deg); }
+            100% { transform: translateY(-100vh) rotate(360deg); }
+        }
+        
+        .label-text {
+            font-weight: 600;
+            color: #374151;
+        }
+        
+        .success-message {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            color: white;
+            border-radius: 12px;
+            padding: 12px 20px;
+            box-shadow: 0 10px 25px rgba(16, 185, 129, 0.3);
+        }
+        
+        .error-message {
+            background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+            color: white;
+            border-radius: 12px;
+            padding: 12px 20px;
+            box-shadow: 0 10px 25px rgba(239, 68, 68, 0.3);
+        }
+        
+        .loading-message {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 12px;
+            padding: 12px 20px;
+            box-shadow: 0 10px 25px rgba(102, 126, 234, 0.3);
+        }
+        
+        .priority-badge {
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .priority-low {
+            background: linear-gradient(135deg, rgba(34, 197, 94, 0.8) 0%, rgba(21, 128, 61, 0.8) 100%);
+            color: white;
+        }
+        
+        .priority-medium {
+            background: linear-gradient(135deg, rgba(245, 158, 11, 0.8) 0%, rgba(217, 119, 6, 0.8) 100%);
+            color: white;
+        }
+        
+        .priority-high {
+            background: linear-gradient(135deg, rgba(239, 68, 68, 0.8) 0%, rgba(220, 38, 38, 0.8) 100%);
+            color: white;
+        }
+        
+        .status-completed {
+            background: linear-gradient(135deg, rgba(34, 197, 94, 0.8) 0%, rgba(21, 128, 61, 0.8) 100%);
+            color: white;
+        }
+        
+        .status-progress {
+            background: linear-gradient(135deg, rgba(245, 158, 11, 0.8) 0%, rgba(217, 119, 6, 0.8) 100%);
+            color: white;
+        }
+        
+        .status-pending {
+            background: linear-gradient(135deg, rgba(107, 114, 128, 0.8) 0%, rgba(75, 85, 99, 0.8) 100%);
+            color: white;
+        }
+        
+        .collab-badge {
+            background: linear-gradient(135deg, rgba(20, 184, 166, 0.8) 0%, rgba(13, 148, 136, 0.8) 100%);
+            color: white;
+        }
+        
+        .due-badge {
+            background: linear-gradient(135deg, rgba(139, 92, 246, 0.8) 0%, rgba(124, 58, 237, 0.8) 100%);
+            color: white;
+        }
+        
+        .divider {
+            background: linear-gradient(90deg, transparent, rgba(102, 126, 234, 0.3), transparent);
+            height: 2px;
+        }
+        
+        .update-form {
+            backdrop-filter: blur(15px);
+            background: rgba(248, 250, 252, 0.9);
+            border: 1px solid rgba(255, 255, 255, 0.4);
+        }
+        
+        .task-title {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            font-weight: 700;
+        }
+        
+        .pulse-animation {
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+    </style>
+</head>
+<body>
+    <!-- Animated background shapes -->
+    <div class="bg-shapes">
+        <div class="shape"></div>
+        <div class="shape"></div>
+        <div class="shape"></div>
+    </div>
+
+    <nav class="navbar-glass p-4 text-white shadow-xl">
+        <div class="container mx-auto flex justify-between items-center">
+            <h1 class="text-2xl font-bold main-title flex items-center">
+                <i class="fas fa-edit icon-glow mr-3"></i>
+                Update Tasks
+            </h1>
+            <a href="dashboard.html" class="back-button px-6 py-2 rounded-xl flex items-center font-medium text-white">
+                <i class="fas fa-arrow-left mr-2"></i>Back to Dashboard
+            </a>
+        </div>
+    </nav>
+
+    <div class="container mx-auto p-6 max-w-6xl">
+        <div class="main-card rounded-3xl p-8 fade-in">
+            <h2 class="text-4xl font-bold mb-2 text-center section-title floating-animation">Manage Your Tasks</h2>
+            <p class="text-gray-600 text-center mb-8">Edit and update your tasks with ease</p>
+            
+            <div id="task-msg" class="text-center mb-6"></div>
+
+            <div id="task-list" class="space-y-6">
+                <div class="text-center py-12">
+                    <div class="loading-message inline-block pulse-animation">
+                        <i class="fas fa-spinner fa-spin mr-2"></i>Loading your tasks...
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const token = localStorage.getItem('token');
+        if (!token) {
+            alert('Please login first!');
+            window.location.href = 'auth.html';
+        }
+        axios.defaults.headers.common['token'] = token;
+
+        // Load tasks on page load
+        document.addEventListener('DOMContentLoaded', loadTasks);
+
+        async function loadTasks() {
+            const list = document.getElementById('task-list');
+            try {
+                const res = await axios.get('/v1/user/gettask');
+                
+                if (res.data.status && Array.isArray(res.data.data)) {
+                    list.innerHTML = '';
+                    
+                    if (res.data.data.length === 0) {
+                        list.innerHTML = `
+                            <div class="text-center py-12">
+                                <div class="w-20 h-20 bg-gradient-to-br from-gray-200 to-gray-300 rounded-full flex items-center justify-center mx-auto mb-4">
+                                    <i class="fas fa-tasks text-gray-500 text-2xl"></i>
+                                </div>
+                                <p class="text-gray-500 text-xl">No tasks found.</p>
+                                <p class="text-gray-400 mt-2">Create your first task to get started!</p>
+                            </div>
+                        `;
+                        return;
+                    }
+
+                    res.data.data.forEach((task, index) => {
+                        const taskElement = document.createElement('div');
+                        taskElement.className = 'task-card rounded-2xl p-6 slide-in';
+                        taskElement.style.animationDelay = `${index * 0.1}s`;
+                        taskElement.id = `task-${task._id}`;
+                        
+                        const priorityClass = task.priority === 'High' ? 'priority-high' : 
+                                            task.priority === 'Medium' ? 'priority-medium' : 'priority-low';
+                        
+                        const statusClass = task.status === 'Completed' ? 'status-completed' : 
+                                          task.status === 'In Progress' ? 'status-progress' : 'status-pending';
+                        
+                        const statusIcon = task.status === 'Completed' ? '✅' : 
+                                         task.status === 'In Progress' ? '🚀' : '⏳';
+                        
+                        const priorityIcon = task.priority === 'High' ? '🔴' : 
+                                           task.priority === 'Medium' ? '🟡' : '🟢';
+                        
+                        taskElement.innerHTML = `
+                            <div class="task-info">
+                                <div class="flex items-start justify-between mb-4">
+                                    <h3 class="task-title text-2xl font-bold flex-1 mr-4">${task.title}</h3>
+                                    <div class="flex items-center space-x-2">
+                                        <button onclick="showUpdateForm('${task._id}')" class="gradient-button-yellow text-white py-2 px-4 rounded-xl text-sm font-medium flex items-center">
+                                            <i class="fas fa-edit mr-2"></i>Edit
+                                        </button>
+                                    </div>
+                                </div>
+                                
+                                <p class="text-gray-600 mb-4 leading-relaxed">${task.description || 'No description provided'}</p>
+                                
+                                <div class="flex flex-wrap gap-3">
+                                    <span class="priority-badge ${priorityClass} px-3 py-1 text-sm rounded-full font-medium flex items-center">
+                                        ${priorityIcon} ${task.priority || 'Low'} Priority
+                                    </span>
+                                    <span class="priority-badge ${statusClass} px-3 py-1 text-sm rounded-full font-medium flex items-center">
+                                        ${statusIcon} ${task.status}
+                                    </span>
+                                    ${task.dueDate ? `
+                                        <span class="priority-badge due-badge px-3 py-1 text-sm rounded-full font-medium flex items-center">
+                                            <i class="fas fa-calendar mr-1"></i>Due: ${new Date(task.dueDate).toLocaleDateString()}
+                                        </span>
+                                    ` : ''}
+                                    ${task.assignees?.length > 0 ? `
+                                        <span class="priority-badge collab-badge px-3 py-1 text-sm rounded-full font-medium flex items-center">
+                                            <i class="fas fa-users mr-1"></i>Collaborative
+                                        </span>
+                                    ` : ''}
+                                </div>
+                            </div>
+
+                            <div id="update-form-${task._id}" class="hidden">
+                                <div class="divider my-6"></div>
+                                <div class="update-form rounded-2xl p-6">
+                                    <div class="flex items-center mb-6">
+                                        <div class="w-10 h-10 bg-gradient-to-br from-yellow-400 to-orange-500 rounded-xl flex items-center justify-center mr-3">
+                                            <i class="fas fa-edit text-white"></i>
+                                        </div>
+                                        <h4 class="text-xl font-bold section-title">Edit Task Details</h4>
+                                    </div>
+                                    
+                                    <div class="space-y-4">
+                                        <div>
+                                            <label class="block label-text mb-2">
+                                                <i class="fas fa-heading mr-2 text-blue-500"></i>Task Title
+                                            </label>
+                                            <input type="text" id="update-title-${task._id}" value="${task.title}" class="input-field w-full p-3 rounded-xl border-0 outline-none">
+                                        </div>
+
+                                        <div>
+                                            <label class="block label-text mb-2">
+                                                <i class="fas fa-align-left mr-2 text-blue-500"></i>Description
+                                            </label>
+                                            <textarea id="update-desc-${task._id}" class="input-field w-full p-3 rounded-xl border-0 outline-none" rows="4">${task.description || ''}</textarea>
+                                        </div>
+
+                                        <div>
+                                            <label class="block label-text mb-2">
+                                                <i class="fas fa-calendar mr-2 text-blue-500"></i>Due Date
+                                            </label>
+                                            <input type="date" id="update-due-${task._id}" value="${task.dueDate ? task.dueDate.split('T')[0] : ''}" class="input-field w-full p-3 rounded-xl border-0 outline-none">
+                                        </div>
+
+                                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                            <div>
+                                                <label class="block label-text mb-2">
+                                                    <i class="fas fa-flag mr-2 text-blue-500"></i>Priority Level
+                                                </label>
+                                                <select id="update-priority-${task._id}" class="input-field w-full p-3 rounded-xl border-0 outline-none">
+                                                    <option value="Low" ${task.priority === 'Low' ? 'selected' : ''}>🟢 Low Priority</option>
+                                                    <option value="Medium" ${task.priority === 'Medium' ? 'selected' : ''}>🟡 Medium Priority</option>
+                                                    <option value="High" ${task.priority === 'High' ? 'selected' : ''}>🔴 High Priority</option>
+                                                </select>
+                                            </div>
+
+                                            <div>
+                                                <label class="block label-text mb-2">
+                                                    <i class="fas fa-tasks mr-2 text-blue-500"></i>Current Status
+                                                </label>
+                                                <select id="update-status-${task._id}" class="input-field w-full p-3 rounded-xl border-0 outline-none">
+                                                    <option value="Pending" ${task.status === 'Pending' ? 'selected' : ''}>⏳ Pending</option>
+                                                    <option value="In Progress" ${task.status === 'In Progress' ? 'selected' : ''}>🚀 In Progress</option>
+                                                    <option value="Completed" ${task.status === 'Completed' ? 'selected' : ''}>✅ Completed</option>
+                                                </select>
+                                            </div>
+                                        </div>
+
+                                        ${task.assignees?.length > 0 ? `
+                                        <div>
+                                            <label class="block label-text mb-2">
+                                                <i class="fas fa-user-friends mr-2 text-green-500"></i>Team Assignees
+                                            </label>
+                                            <input type="text" id="update-assignees-${task._id}" value="${task.assignees.join(', ')}" class="input-field w-full p-3 rounded-xl border-0 outline-none" placeholder="Enter user IDs separated by commas">
+                                        </div>
+                                        ` : ''}
+
+                                        <div class="flex justify-end gap-3 pt-4">
+                                            <button onclick="hideUpdateForm('${task._id}')" class="back-button text-white py-3 px-6 rounded-xl font-medium flex items-center">
+                                                <i class="fas fa-times mr-2"></i>Cancel
+                                            </button>
+                                            <button onclick="updateTask('${task._id}')" class="gradient-button-green text-white py-3 px-6 rounded-xl font-medium flex items-center">
+                                                <i class="fas fa-save mr-2"></i>Save Changes
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+                        
+                        list.appendChild(taskElement);
+                    });
+                } else {
+                    list.innerHTML = `
+                        <div class="text-center py-12">
+                            <div class="w-20 h-20 bg-gradient-to-br from-gray-200 to-gray-300 rounded-full flex items-center justify-center mx-auto mb-4">
+                                <i class="fas fa-tasks text-gray-500 text-2xl"></i>
+                            </div>
+                            <p class="text-gray-500 text-xl">No tasks found.</p>
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                list.innerHTML = `
+                    <div class="text-center py-12">
+                        <div class="error-message inline-block">
+                            <i class="fas fa-exclamation-triangle mr-2"></i>${error.response?.data?.message || 'Failed to load tasks'}
+                        </div>
+                    </div>
+                `;
+            }
+        }
+
+        function showUpdateForm(id) {
+            const form = document.getElementById(`update-form-${id}`);
+            form.classList.remove('hidden');
+            form.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+
+        function hideUpdateForm(id) {
+            document.getElementById(`update-form-${id}`).classList.add('hidden');
+        }
+
+        async function updateTask(id) {
+            const title = document.getElementById(`update-title-${id}`).value;
+            const description = document.getElementById(`update-desc-${id}`).value;
+            const dueDate = document.getElementById(`update-due-${id}`).value;
+            const priority = document.getElementById(`update-priority-${id}`).value;
+            const status = document.getElementById(`update-status-${id}`).value;
+            
+            let assignees = [];
+            const assigneesInput = document.getElementById(`update-assignees-${id}`);
+            if (assigneesInput) {
+                assignees = assigneesInput.value.split(',').map(s => s.trim()).filter(Boolean);
+            }
+
+            const msg = document.getElementById('task-msg');
+            msg.innerHTML = '<div class="loading-message inline-block pulse-animation"><i class="fas fa-spinner fa-spin mr-2"></i>Updating task...</div>';
+
+            try {
+                let res;
+                if (assignees.length > 0) {
+                    res = await axios.put(`/v1/user/update-collab-task/${id}`, { 
+                        title, description, dueDate, priority, status, assignees 
+                    });
+                } else {
+                    res = await axios.put(`/v1/user/updatetask/${id}`, { 
+                        title, description, dueDate, priority, status 
+                    });
+                }
+
+                msg.innerHTML = `<div class="${res.data.status ? 'success-message' : 'error-message'} inline-block"><i class="fas fa-${res.data.status ? 'check-circle' : 'times-circle'} mr-2"></i>${res.data.message}</div>`;
+                
+                if (res.data.status) {
+                    hideUpdateForm(id);
+                    setTimeout(() => {
+                        loadTasks(); // Refresh the list
+                        msg.innerHTML = '';
+                    }, 2000);
+                }
+            } catch (error) {
+                msg.innerHTML = `<div class="error-message inline-block"><i class="fas fa-times-circle mr-2"></i>${error.response?.data?.message || 'Failed to update task'}</div>`;
+            }
+        }
+
+        // Add some interactivity
+        document.addEventListener('DOMContentLoaded', function() {
+            // Add focus effects to inputs
+            const inputs = document.querySelectorAll('.input-field');
+            inputs.forEach(input => {
+                input.addEventListener('focus', function() {
+                    this.parentElement.style.transform = 'scale(1.02)';
+                });
+                
+                input.addEventListener('blur', function() {
+                    this.parentElement.style.transform = 'scale(1)';
+                });
+            });
+        });
+    </script>
+</body>
+</html>

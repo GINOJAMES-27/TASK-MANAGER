@@ -1,0 +1,599 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Delete Tasks</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+        }
+        
+        .navbar-glass {
+            backdrop-filter: blur(20px);
+            background: rgba(255, 255, 255, 0.15);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .main-card {
+            backdrop-filter: blur(20px);
+            background: rgba(255, 255, 255, 0.95);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.15);
+            transition: all 0.4s ease;
+        }
+        
+        .task-card {
+            backdrop-filter: blur(10px);
+            background: rgba(255, 255, 255, 0.9);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .task-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+            transition: left 0.6s ease;
+        }
+        
+        .task-card:hover::before {
+            left: 100%;
+        }
+        
+        .task-card:hover {
+            background: rgba(255, 255, 255, 0.95);
+            transform: translateY(-5px);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+        }
+        
+        .gradient-button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .gradient-button::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+            transition: left 0.5s ease;
+        }
+        
+        .gradient-button:hover::before {
+            left: 100%;
+        }
+        
+        .gradient-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(102, 126, 234, 0.4);
+        }
+        
+        .gradient-button-red {
+            background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+        }
+        
+        .gradient-button-red:hover {
+            box-shadow: 0 10px 25px rgba(239, 68, 68, 0.4);
+        }
+        
+        .back-button {
+            background: linear-gradient(135deg, #6b7280 0%, #4b5563 100%);
+            transition: all 0.3s ease;
+        }
+        
+        .back-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(107, 114, 128, 0.4);
+        }
+        
+        .main-title {
+            color: white;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+            font-weight: 700;
+        }
+        
+        .section-title {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        .icon-glow {
+            filter: drop-shadow(0 0 8px rgba(255, 255, 255, 0.5));
+        }
+        
+        .floating-animation {
+            animation: float 6s ease-in-out infinite;
+        }
+        
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-5px); }
+        }
+        
+        .fade-in {
+            animation: fadeIn 0.8s ease-in forwards;
+            opacity: 0;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .slide-in {
+            animation: slideIn 0.6s ease-out forwards;
+            opacity: 0;
+            transform: translateX(-30px);
+        }
+        
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateX(-30px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+        
+        /* Animated background elements */
+        .bg-shapes {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            z-index: -1;
+        }
+        
+        .shape {
+            position: absolute;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 50%;
+            animation: drift 30s infinite linear;
+        }
+        
+        .shape:nth-child(1) {
+            width: 80px;
+            height: 80px;
+            top: 10%;
+            left: 10%;
+            animation-delay: 0s;
+        }
+        
+        .shape:nth-child(2) {
+            width: 120px;
+            height: 120px;
+            top: 70%;
+            right: 15%;
+            animation-delay: -10s;
+        }
+        
+        .shape:nth-child(3) {
+            width: 100px;
+            height: 100px;
+            top: 40%;
+            left: 85%;
+            animation-delay: -20s;
+        }
+        
+        @keyframes drift {
+            0% { transform: translateY(0px) rotate(0deg); }
+            100% { transform: translateY(-100vh) rotate(360deg); }
+        }
+        
+        .success-message {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            color: white;
+            border-radius: 12px;
+            padding: 12px 20px;
+            box-shadow: 0 10px 25px rgba(16, 185, 129, 0.3);
+        }
+        
+        .error-message {
+            background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+            color: white;
+            border-radius: 12px;
+            padding: 12px 20px;
+            box-shadow: 0 10px 25px rgba(239, 68, 68, 0.3);
+        }
+        
+        .loading-message {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 12px;
+            padding: 12px 20px;
+            box-shadow: 0 10px 25px rgba(102, 126, 234, 0.3);
+        }
+        
+        .priority-badge {
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .priority-low {
+            background: linear-gradient(135deg, rgba(34, 197, 94, 0.8) 0%, rgba(21, 128, 61, 0.8) 100%);
+            color: white;
+        }
+        
+        .priority-medium {
+            background: linear-gradient(135deg, rgba(245, 158, 11, 0.8) 0%, rgba(217, 119, 6, 0.8) 100%);
+            color: white;
+        }
+        
+        .priority-high {
+            background: linear-gradient(135deg, rgba(239, 68, 68, 0.8) 0%, rgba(220, 38, 38, 0.8) 100%);
+            color: white;
+        }
+        
+        .status-completed {
+            background: linear-gradient(135deg, rgba(34, 197, 94, 0.8) 0%, rgba(21, 128, 61, 0.8) 100%);
+            color: white;
+        }
+        
+        .status-progress {
+            background: linear-gradient(135deg, rgba(245, 158, 11, 0.8) 0%, rgba(217, 119, 6, 0.8) 100%);
+            color: white;
+        }
+        
+        .status-pending {
+            background: linear-gradient(135deg, rgba(107, 114, 128, 0.8) 0%, rgba(75, 85, 99, 0.8) 100%);
+            color: white;
+        }
+        
+        .collab-badge {
+            background: linear-gradient(135deg, rgba(20, 184, 166, 0.8) 0%, rgba(13, 148, 136, 0.8) 100%);
+            color: white;
+        }
+        
+        .due-badge {
+            background: linear-gradient(135deg, rgba(139, 92, 246, 0.8) 0%, rgba(124, 58, 237, 0.8) 100%);
+            color: white;
+        }
+        
+        .task-title {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            font-weight: 700;
+        }
+        
+        .pulse-animation {
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+        
+        .danger-glow {
+            animation: dangerGlow 2s infinite;
+        }
+        
+        @keyframes dangerGlow {
+            0%, 100% { box-shadow: 0 0 20px rgba(239, 68, 68, 0.3); }
+            50% { box-shadow: 0 0 30px rgba(239, 68, 68, 0.6); }
+        }
+        
+        .shake-animation {
+            animation: shake 0.5s ease-in-out;
+        }
+        
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-5px); }
+            75% { transform: translateX(5px); }
+        }
+        
+        .modal-overlay {
+            backdrop-filter: blur(10px);
+            background: rgba(0, 0, 0, 0.5);
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s ease;
+        }
+        
+        .modal-overlay.active {
+            opacity: 1;
+            visibility: visible;
+        }
+        
+        .modal-content {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            border-radius: 24px;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.2);
+            transform: scale(0.8);
+            transition: all 0.3s ease;
+        }
+        
+        .modal-overlay.active .modal-content {
+            transform: scale(1);
+        }
+    </style>
+</head>
+<body>
+    <!-- Animated background shapes -->
+    <div class="bg-shapes">
+        <div class="shape"></div>
+        <div class="shape"></div>
+        <div class="shape"></div>
+    </div>
+
+    <nav class="navbar-glass p-4 text-white shadow-xl">
+        <div class="container mx-auto flex justify-between items-center">
+            <h1 class="text-2xl font-bold main-title flex items-center">
+                <i class="fas fa-trash-alt icon-glow mr-3"></i>
+                Delete Tasks
+            </h1>
+            <a href="dashboard.html" class="back-button px-6 py-2 rounded-xl flex items-center font-medium text-white">
+                <i class="fas fa-arrow-left mr-2"></i>Back to Dashboard
+            </a>
+        </div>
+    </nav>
+
+    <div class="container mx-auto p-6 max-w-6xl">
+        <div class="main-card rounded-3xl p-8 fade-in">
+            <h2 class="text-4xl font-bold mb-2 text-center section-title floating-animation">Manage Your Tasks</h2>
+            <p class="text-gray-600 text-center mb-8">Carefully remove tasks that are no longer needed</p>
+            
+            <div id="task-msg" class="text-center mb-6"></div>
+
+            <div id="task-list" class="space-y-6">
+                <div class="text-center py-12">
+                    <div class="loading-message inline-block pulse-animation">
+                        <i class="fas fa-spinner fa-spin mr-2"></i>Loading your tasks...
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Custom Confirmation Modal -->
+    <div id="confirmModal" class="modal-overlay">
+        <div class="modal-content p-8 max-w-md mx-4">
+            <div class="text-center">
+                <div class="w-16 h-16 bg-gradient-to-br from-red-500 to-red-600 rounded-full flex items-center justify-center mx-auto mb-4 danger-glow">
+                    <i class="fas fa-exclamation-triangle text-white text-2xl"></i>
+                </div>
+                <h3 class="text-xl font-bold mb-2 text-gray-800">Confirm Deletion</h3>
+                <p class="text-gray-600 mb-6">Are you sure you want to delete this task?</p>
+                <div class="bg-gray-100 rounded-lg p-3 mb-6">
+                    <p class="font-medium text-gray-800" id="taskToDelete">Task Title</p>
+                </div>
+                <div class="flex justify-center gap-4">
+                    <button onclick="closeModal()" class="back-button text-white py-2 px-6 rounded-xl font-medium">
+                        <i class="fas fa-times mr-2"></i>Cancel
+                    </button>
+                    <button onclick="executeDelete()" class="gradient-button-red text-white py-2 px-6 rounded-xl font-medium">
+                        <i class="fas fa-trash mr-2"></i>Delete
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const token = localStorage.getItem('token');
+        if (!token) {
+            alert('Please login first!');
+            window.location.href = 'auth.html';
+        }
+        axios.defaults.headers.common['token'] = token;
+
+        let taskToDeleteId = null;
+
+        // Load tasks on page load
+        document.addEventListener('DOMContentLoaded', loadTasks);
+
+        async function loadTasks() {
+            const list = document.getElementById('task-list');
+            try {
+                const res = await axios.get('/v1/user/gettask');
+                
+                if (res.data.status && Array.isArray(res.data.data)) {
+                    list.innerHTML = '';
+                    
+                    if (res.data.data.length === 0) {
+                        list.innerHTML = `
+                            <div class="text-center py-12">
+                                <div class="w-20 h-20 bg-gradient-to-br from-gray-200 to-gray-300 rounded-full flex items-center justify-center mx-auto mb-4">
+                                    <i class="fas fa-tasks text-gray-500 text-2xl"></i>
+                                </div>
+                                <p class="text-gray-500 text-xl">No tasks found.</p>
+                                <p class="text-gray-400 mt-2">Create your first task to get started!</p>
+                            </div>
+                        `;
+                        return;
+                    }
+
+                    res.data.data.forEach((task, index) => {
+                        const taskElement = document.createElement('div');
+                        taskElement.className = 'task-card rounded-2xl p-6 slide-in';
+                        taskElement.style.animationDelay = `${index * 0.1}s`;
+                        taskElement.id = `task-${task._id}`;
+                        
+                        const priorityClass = task.priority === 'High' ? 'priority-high' : 
+                                            task.priority === 'Medium' ? 'priority-medium' : 'priority-low';
+                        
+                        const statusClass = task.status === 'Completed' ? 'status-completed' : 
+                                          task.status === 'In Progress' ? 'status-progress' : 'status-pending';
+                        
+                        const statusIcon = task.status === 'Completed' ? '✅' : 
+                                         task.status === 'In Progress' ? '🚀' : '⏳';
+                        
+                        const priorityIcon = task.priority === 'High' ? '🔴' : 
+                                           task.priority === 'Medium' ? '🟡' : '🟢';
+                        
+                        taskElement.innerHTML = `
+                            <div class="flex items-start justify-between">
+                                <div class="flex-1 mr-6">
+                                    <h3 class="task-title text-2xl font-bold mb-3">${task.title}</h3>
+                                    <p class="text-gray-600 mb-4 leading-relaxed">${task.description || 'No description provided'}</p>
+                                    
+                                    <div class="flex flex-wrap gap-3">
+                                        <span class="priority-badge ${priorityClass} px-3 py-1 text-sm rounded-full font-medium flex items-center">
+                                            ${priorityIcon} ${task.priority || 'Low'} Priority
+                                        </span>
+                                        <span class="priority-badge ${statusClass} px-3 py-1 text-sm rounded-full font-medium flex items-center">
+                                            ${statusIcon} ${task.status}
+                                        </span>
+                                        ${task.dueDate ? `
+                                            <span class="priority-badge due-badge px-3 py-1 text-sm rounded-full font-medium flex items-center">
+                                                <i class="fas fa-calendar mr-1"></i>Due: ${new Date(task.dueDate).toLocaleDateString()}
+                                            </span>
+                                        ` : ''}
+                                        ${task.assignees?.length > 0 ? `
+                                            <span class="priority-badge collab-badge px-3 py-1 text-sm rounded-full font-medium flex items-center">
+                                                <i class="fas fa-users mr-1"></i>Collaborative
+                                            </span>
+                                        ` : ''}
+                                    </div>
+                                </div>
+
+                                <div class="flex flex-col items-center">
+                                    <div class="w-12 h-12 bg-gradient-to-br from-red-500 to-red-600 rounded-xl flex items-center justify-center mb-2 danger-glow">
+                                        <i class="fas fa-trash text-white"></i>
+                                    </div>
+                                    <button onclick="confirmDelete('${task._id}', '${task.title.replace(/'/g, '\\\'')}')" 
+                                            class="gradient-button-red text-white py-2 px-4 rounded-xl text-sm font-medium flex items-center hover:shake-animation">
+                                        <i class="fas fa-trash mr-2"></i>Delete
+                                    </button>
+                                </div>
+                            </div>
+                        `;
+                        
+                        list.appendChild(taskElement);
+                    });
+                } else {
+                    list.innerHTML = `
+                        <div class="text-center py-12">
+                            <div class="w-20 h-20 bg-gradient-to-br from-gray-200 to-gray-300 rounded-full flex items-center justify-center mx-auto mb-4">
+                                <i class="fas fa-tasks text-gray-500 text-2xl"></i>
+                            </div>
+                            <p class="text-gray-500 text-xl">No tasks found.</p>
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                list.innerHTML = `
+                    <div class="text-center py-12">
+                        <div class="error-message inline-block">
+                            <i class="fas fa-exclamation-triangle mr-2"></i>${error.response?.data?.message || 'Failed to load tasks'}
+                        </div>
+                    </div>
+                `;
+            }
+        }
+
+        function confirmDelete(id, title) {
+            taskToDeleteId = id;
+            document.getElementById('taskToDelete').textContent = title;
+            document.getElementById('confirmModal').classList.add('active');
+        }
+
+        function closeModal() {
+            document.getElementById('confirmModal').classList.remove('active');
+            taskToDeleteId = null;
+        }
+
+        function executeDelete() {
+            if (taskToDeleteId) {
+                deleteTask(taskToDeleteId);
+                closeModal();
+            }
+        }
+
+        async function deleteTask(id) {
+            const msg = document.getElementById('task-msg');
+            msg.innerHTML = '<div class="loading-message inline-block pulse-animation"><i class="fas fa-spinner fa-spin mr-2"></i>Deleting task...</div>';
+
+            try {
+                const res = await axios.delete(`/v1/user/deletetask/${id}`);
+                msg.innerHTML = `<div class="${res.data.status ? 'success-message' : 'error-message'} inline-block"><i class="fas fa-${res.data.status ? 'check-circle' : 'times-circle'} mr-2"></i>${res.data.message}</div>`;
+                
+                if (res.data.status) {
+                    // Remove the task from the DOM with animation
+                    const taskElement = document.getElementById(`task-${id}`);
+                    if (taskElement) {
+                        taskElement.style.animation = 'slideOut 0.5s ease-in forwards';
+                        setTimeout(() => {
+                            taskElement.remove();
+                            // Check if no tasks remain
+                            const remainingTasks = document.querySelectorAll('[id^="task-"]');
+                            if (remainingTasks.length === 0) {
+                                document.getElementById('task-list').innerHTML = `
+                                    <div class="text-center py-12">
+                                        <div class="w-20 h-20 bg-gradient-to-br from-gray-200 to-gray-300 rounded-full flex items-center justify-center mx-auto mb-4">
+                                            <i class="fas fa-tasks text-gray-500 text-2xl"></i>
+                                        </div>
+                                        <p class="text-gray-500 text-xl">All tasks deleted.</p>
+                                        <p class="text-gray-400 mt-2">Create new tasks to get started!</p>
+                                    </div>
+                                `;
+                            }
+                        }, 500);
+                    }
+                    
+                    setTimeout(() => {
+                        msg.innerHTML = '';
+                    }, 3000);
+                }
+            } catch (error) {
+                msg.innerHTML = `<div class="error-message inline-block"><i class="fas fa-times-circle mr-2"></i>${error.response?.data?.message || 'Failed to delete task'}</div>`;
+            }
+        }
+
+        // Add slide out animation
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes slideOut {
+                from { opacity: 1; transform: translateX(0); }
+                to { opacity: 0; transform: translateX(100%); }
+            }
+        `;
+        document.head.appendChild(style);
+
+        // Close modal when clicking outside
+        document.getElementById('confirmModal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeModal();
+            }
+        });
+
+        // Add keyboard shortcuts
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                closeModal();
+            }
+        });
+    </script>
+</body>
+</html>
