@@ -88,5 +88,5 @@ A robust REST API for task management with authentication, role-based access con
 
 1. Clone the repository:
    ```bash
-   git clone https://github.com/yourusername/task-management-api.git
-   cd task-management-api
+   https://github.com/GINOJAMES-27/TASK-MANAGER.git
+   
